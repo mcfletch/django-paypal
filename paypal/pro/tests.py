@@ -3,7 +3,6 @@
 from django.conf import settings
 from django.core.handlers.wsgi import WSGIRequest
 from django.forms import ValidationError
-from django.http import QueryDict
 from django.test import TestCase
 from django.test.client import Client
 
@@ -50,10 +49,15 @@ class CreditCardFieldTest(TestCase):
         field.clean('4797503429879309')
         self.assertEquals(field.card_type, "Visa")
         self.assertRaises(ValidationError, CreditCardField().clean, '1234567890123455')
+        self.assertRaises(ValidationError, CreditCardField().clean, None)
 
     def test_invalidCreditCards(self):
         self.assertEquals(CreditCardField().clean('4797-5034-2987-9309'), '4797503429879309')
-        
+
+    def test_emptyCreditCardNumber(self):
+        self.assertRaises(ValidationError, CreditCardField().clean, None)
+        self.assertRaises(ValidationError, CreditCardField().clean, '')
+
 class PayPalWPPTest(TestCase):
     def setUp(self):
     
