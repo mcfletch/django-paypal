@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from django.utils.translation import ugettext_lazy as _
 from django import forms
 from django.conf import settings
 from django.utils.safestring import mark_safe
@@ -50,6 +51,14 @@ class PayPalPaymentsForm(forms.Form):
     BUY = 'buy'
     SUBSCRIBE = 'subscribe'
     DONATE = 'donate'
+    RECURRING = 'recurring'
+    
+    ALT_TEXT_CHOICES = [
+        (BUY, _("Buy Now")),
+        (SUBSCRIBE, _("Subscribe Now")),
+        (DONATE, _("Donate Now")),
+        (RECURRING, _("Automatic Billing")),
+    ]
 
     # Where the money goes.
     business = forms.CharField(widget=ValueHiddenInput(), initial=RECEIVER_EMAIL)
@@ -75,6 +84,12 @@ class PayPalPaymentsForm(forms.Form):
     no_note = forms.CharField(widget=ValueHiddenInput())    
     # Can be either 1 or 2. 1 = modify or allow new subscription creation, 2 = modify only
     modify = forms.IntegerField(widget=ValueHiddenInput()) # Are we modifying an existing subscription?
+    
+    # Automatic Payments Related 
+    set_customer_limit = forms.CharField(widget=ValueHiddenInput()) # how customer limit-setting is handled
+    max_text = forms.CharField(widget=ValueHiddenInput()) # Text describing the maximum bill amount
+    min_amount = forms.CharField(widget=ValueHiddenInput()) # Minimum pre-auth amount to accept 
+    max_amount = forms.CharField(widget=ValueHiddenInput()) # Amount user enters to be pre-auth cap...
     
     # Localization / PayPal Setup
     lc = forms.CharField(widget=ValueHiddenInput())
@@ -102,34 +117,58 @@ class PayPalPaymentsForm(forms.Form):
     def render(self):
         return mark_safe(u"""<form action="%s" method="post">
     %s
-    <input type="image" src="%s" border="0" name="submit" alt="Buy it Now" />
-</form>""" % (POSTBACK_ENDPOINT, self.as_p(), self.get_image()))
-        
-        
-    def sandbox(self):
-        return mark_safe(u"""<form action="%s" method="post">
-    %s
-    <input type="image" src="%s" border="0" name="submit" alt="Buy it Now" />
-</form>""" % (SANDBOX_POSTBACK_ENDPOINT, self.as_p(), self.get_image()))
-        
+    <input type="image" src="%s" border="0" name="submit" alt="%s"  data-role="none" />
+</form>""" % (
+            self.get_postback_endpoint(), 
+            self.as_p(), 
+            self.get_image(),
+            self.get_alt_text(),
+            )
+        )
+    sandbox = render
+    
+    def get_postback_endpoint( self ):
+        """Retrieve appropriate endpoint to which to send requests"""
+        if TEST:
+            return SANDBOX_POSTBACK_ENDPOINT
+        else:
+            return POSTBACK_ENDPOINT
+    def get_alt_text( self ):
+        """Get alt text for the PayPal images"""
+        for key,t in self.ALT_TEXT_CHOICES:
+            if key == self.button_type:
+                return t 
+        return _("Buy it Now")
+    
+    BUTTON_IMAGE_MAP = {
+        (True, self.SUBSCRIBE): SUBSCRIPTION_SANDBOX_IMAGE,
+        (True, self.BUY): SANDBOX_IMAGE,
+        (True, self.DONATE): DONATION_SANDBOX_IMAGE,
+        (True, self.RECURRING): RECURRING_SANDBOX_IMAGE,
+        (False, self.SUBSCRIBE): SUBSCRIPTION_IMAGE,
+        (False, self.BUY): IMAGE,
+        (False, self.DONATE): DONATION_IMAGE,
+        (False, self.RECURRING): RECURRING_IMAGE,
+    }
+    
     def get_image(self):
-        return {
-            (True, self.SUBSCRIBE): SUBSCRIPTION_SANDBOX_IMAGE,
-            (True, self.BUY): SANDBOX_IMAGE,
-            (True, self.DONATE): DONATION_SANDBOX_IMAGE,
-            (False, self.SUBSCRIBE): SUBSCRIPTION_IMAGE,
-            (False, self.BUY): IMAGE,
-            (False, self.DONATE): DONATION_IMAGE,
-        }[TEST, self.button_type]
+        """Retrieve image URL for appropriate PayPal button
+        
+        Looks up self.BUTTON_IMAGE_MAP[ (TEST,self.button_type) ]
+        """
+        return self.BUTTON_IMAGE_MAP[(TEST, self.button_type)]
 
     def is_transaction(self):
-        return not self.is_subscription()
-
+        """We are a transaction if we are *not* a recurring-payment setup *or* a subscription"""
+        return not ( self.is_subscription() or self.is_recurring() )
+    # basic checks for types...
     def is_donation(self):
         return self.button_type == self.DONATE
-
     def is_subscription(self):
         return self.button_type == self.SUBSCRIBE
+    def is_recurring(self):
+        return self.button_type == self.RECURRING 
+    
 
 
 class PayPalEncryptedPaymentsForm(PayPalPaymentsForm):
@@ -217,3 +256,5 @@ class PayPalStandardBaseForm(forms.ModelForm):
     next_payment_date = forms.DateTimeField(required=False, input_formats=PAYPAL_DATE_FORMAT)
     subscr_date = forms.DateTimeField(required=False, input_formats=PAYPAL_DATE_FORMAT)
     subscr_effective = forms.DateTimeField(required=False, input_formats=PAYPAL_DATE_FORMAT)
+
+from django.utils.translation import ugettext as _
