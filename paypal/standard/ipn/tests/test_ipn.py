@@ -107,7 +107,7 @@ class IPNTest(TestCase):
         self.assertFlagged(update, flag_info)
         
     def test_vaid_payment_status_cancelled(self):
-        update = {"payment_status": ST_PP_CANCELLED}
+        update = {"payment_status": ST_PP_CANCELLED,'txn_id':''}
         params = IPN_POST_PARAMS.copy()
         params.update(update)
         response = self.client.post("/ipn/", params)

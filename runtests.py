@@ -37,4 +37,6 @@ def runtests(*test_args):
 
 
 if __name__ == '__main__':
+    import logging 
+    logging.basicConfig(level=logging.ERROR)
     runtests(*sys.argv[1:])

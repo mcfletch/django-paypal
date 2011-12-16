@@ -5,7 +5,7 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from paypal.standard.ipn.forms import PayPalIPNForm
 from paypal.standard.ipn.models import PayPalIPN
- 
+from django.views.decorators.csrf import csrf_exempt
  
 @require_POST
 @csrf_exempt

@@ -6,6 +6,7 @@ import pprint
 import time
 import urllib
 import urllib2
+import logging
 
 from django.conf import settings
 from django.forms.models import fields_for_model
@@ -15,6 +16,8 @@ from django.utils.http import urlencode
 from paypal.pro.signals import *
 from paypal.pro.models import PayPalNVP, L
 from paypal.pro.exceptions import PayPalFailure
+
+log = logging.getLogger( __name__ )
 
 TEST = settings.PAYPAL_TEST
 USER = settings.PAYPAL_WPP_USER 
@@ -220,10 +223,8 @@ class PayPalWPP(object):
         response_params = self._parse_response(response)
         
         if getattr(settings, 'PAYPAL_DEBUG', settings.DEBUG):
-            print 'PayPal Request:'
-            pprint.pprint(defaults)
-            print '\nPayPal Response:'
-            pprint.pprint(response_params)
+            log.warn( 'PayPal Request:\n%s', pprint.pformat( defaults ))
+            log.warn( 'PayPal Response:\n%s', pprint.pformat( response_params ))
 
         # Gather all NVP parameters to pass to a new instance.
         nvp_params = {}

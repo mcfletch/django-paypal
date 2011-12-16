@@ -9,10 +9,9 @@ def duplicate_txn_id(ipn_obj):
     """
     query = ipn_obj._default_manager.filter(txn_id = ipn_obj.txn_id)
     
-    if ipn_obj.payment_status == "Completed":
-        # A payment that was pending and is now completed will have the same
-        # IPN transaction id, so don't flag them as duplicates because it
-        # means that the payment was finally successful!
+    if ipn_obj.payment_status in ("Completed", "Denied"):
+        # A payment that was pending and is now completed or denied will have
+        # the same IPN transaction id, so don't flag it as a duplicate.
         query = query.exclude(payment_status = "Pending")
     
     return query.count() > 0
