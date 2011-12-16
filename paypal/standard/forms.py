@@ -141,14 +141,14 @@ class PayPalPaymentsForm(forms.Form):
         return _("Buy it Now")
     
     BUTTON_IMAGE_MAP = {
-        (True, self.SUBSCRIBE): SUBSCRIPTION_SANDBOX_IMAGE,
-        (True, self.BUY): SANDBOX_IMAGE,
-        (True, self.DONATE): DONATION_SANDBOX_IMAGE,
-        (True, self.RECURRING): RECURRING_SANDBOX_IMAGE,
-        (False, self.SUBSCRIBE): SUBSCRIPTION_IMAGE,
-        (False, self.BUY): IMAGE,
-        (False, self.DONATE): DONATION_IMAGE,
-        (False, self.RECURRING): RECURRING_IMAGE,
+        (True, SUBSCRIBE): SUBSCRIPTION_SANDBOX_IMAGE,
+        (True, BUY): SANDBOX_IMAGE,
+        (True, DONATE): DONATION_SANDBOX_IMAGE,
+        (True, RECURRING): RECURRING_SANDBOX_IMAGE,
+        (False, SUBSCRIBE): SUBSCRIPTION_IMAGE,
+        (False, BUY): IMAGE,
+        (False, DONATE): DONATION_IMAGE,
+        (False, RECURRING): RECURRING_IMAGE,
     }
     
     def get_image(self):
